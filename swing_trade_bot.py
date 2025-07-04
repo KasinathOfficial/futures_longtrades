@@ -1,15 +1,15 @@
 # swing_trade_bot.py
-import streamlit as st
 import pandas as pd
 import numpy as np
 import ta
 import requests
 import time
 from datetime import datetime
+import os
 
 # Telegram Configuration
-TELEGRAM_TOKEN = st.secrets["TELEGRAM_TOKEN"]
-CHAT_ID = st.secrets["CHAT_ID"]
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 
 # Function to send Telegram alert
 def send_telegram_alert(message):
@@ -83,24 +83,17 @@ def analyze_symbol(symbol):
 
     return None
 
-# Streamlit Web UI
-st.set_page_config(page_title="CoinDCX Futures Bot", layout="centered")
-st.title("🤖 24/7 CoinDCX Futures Analyzer + Telegram Bot")
-
-if st.button("🔍 Scan All Futures and Alert on Telegram"):
-    with st.spinner("Scanning all CoinDCX futures..."):
+# Main loop for continuous 24/7 scanning
+def run_bot():
+    while True:
         futures = get_futures_symbols()
-        signals_sent = 0
-
+        print(f"Scanning {len(futures)} futures pairs at {datetime.utcnow()}...")
         for symbol in futures:
             signal = analyze_symbol(symbol)
             if signal:
-                sent = send_telegram_alert(signal)
-                if sent:
-                    signals_sent += 1
-                    st.success(f"✅ Signal sent for {symbol}")
+                print(f"Signal for {symbol}")
+                send_telegram_alert(signal)
+        time.sleep(3600)  # Wait 1 hour
 
-        if signals_sent == 0:
-            st.warning("No valid setups found.")
-        else:
-            st.info(f"✅ {signals_sent} signals sent to Telegram.")
+if __name__ == "__main__":
+    run_bot()
